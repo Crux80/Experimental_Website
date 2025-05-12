@@ -536,7 +536,7 @@ hr.content-divider-minor {
 }
 .legend-header:hover { background-color: #f9f9f9; }
 .legend-toggle-icon { font-size: 0.8em; margin-left: 5px; }
-.legend-content { padding: 8px 12px; max-height: calc(100vh - 220px); overflow-y: auto; } 
+.legend-content { padding: 8px 12px; max-height: 350px; overflow-y: auto; } 
 .legend-content.collapsed { display: none; }
 .legend h4 { 
     margin: 8px 0 6px; 
@@ -626,7 +626,7 @@ hr.content-divider-minor {
         max-width: 200px;
     }
     .legend-content {
-         max-height: 150px; 
+         max-height: 200px; 
     }
 }
 /* === End of Appended CSS for Interactive Map === */
