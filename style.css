@@ -434,8 +434,8 @@ hr.content-divider-minor {
 /* Info Box - positioned relative to #map */
 .info-box {
     position: absolute;
-    top: 10px;    /* Adjusted: Simple offset from map top */
-    left: 10px;   /* Adjusted: Simple offset from map left */
+    top: 30px;    /* Adjusted: Simple offset from map top */
+    left: 55px;   /* Adjusted: Simple offset from map left */
     background: rgba(255, 255, 255, 0.92);
     padding: 0; 
     border-radius: 6px;
@@ -614,7 +614,7 @@ hr.content-divider-minor {
         max-width: 280px; 
         font-size: 0.8em; 
         top: 5px;    /* Adjusted: Closer to map edge on mobile */
-        left: 5px;   /* Adjusted: Closer to map edge on mobile */
+        left:5px;   /* Adjusted: Closer to map edge on mobile */
     }
     .custom-layer-control-container {
         font-size: 0.85em;
