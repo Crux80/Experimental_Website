@@ -1,0 +1,52 @@
+{
+  "data": [
+    {
+      "type": "pie",
+      "labels": [
+        "Agriculture",
+        "Commercial",
+        "High Density Residential",
+        "Institutional",
+        "Low Density Residential",
+        "Medium Density Residential",
+        "Preserved Recreation and Open Space",
+        "Surface Waters",
+        "Transportation",
+        "Vacant"
+      ],
+      "values": [
+        0.112989,
+        0.07151,
+        0.051087,
+        0.526358,
+        1.124331,
+        1.036522,
+        0.79664,
+        1.130878,
+        0.081829,
+        0.34821
+      ],
+      "textinfo": "label+percent",
+      "hovertemplate": "%{label}<br>Area: %{value:.2f} km\u00b2<extra></extra>",
+      "marker": {
+        "colors": [
+          "#a1d99b",
+          "#fdae6b",
+          "#969696",
+          "#9ecae1",
+          "#d9d9d9",
+          "#bdbdbd",
+          "#74c476",
+          "#3182bd",
+          "#636363",
+          "#fdd0a2"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "title": {
+      "text": "Stump Pond Land Use"
+    }
+  }
+}

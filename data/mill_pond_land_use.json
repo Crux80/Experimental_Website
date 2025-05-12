@@ -1,0 +1,52 @@
+{
+  "data": [
+    {
+      "type": "pie",
+      "labels": [
+        "Agriculture",
+        "Commercial",
+        "High Density Residential",
+        "Institutional",
+        "Low Density Residential",
+        "Medium Density Residential",
+        "Preserved Recreation and Open Space",
+        "Surface Waters",
+        "Transportation",
+        "Vacant"
+      ],
+      "values": [
+        0.141236,
+        0.089388,
+        0.063859,
+        0.657947,
+        1.405414,
+        1.295653,
+        0.9958,
+        1.413598,
+        0.102286,
+        0.435263
+      ],
+      "textinfo": "label+percent",
+      "hovertemplate": "%{label}<br>Area: %{value:.2f} km\u00b2<extra></extra>",
+      "marker": {
+        "colors": [
+          "#a1d99b",
+          "#fdae6b",
+          "#969696",
+          "#9ecae1",
+          "#d9d9d9",
+          "#bdbdbd",
+          "#74c476",
+          "#3182bd",
+          "#636363",
+          "#fdd0a2"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "title": {
+      "text": "Mill Pond Land Use"
+    }
+  }
+}
