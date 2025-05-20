@@ -111,14 +111,15 @@ hr.content-divider-minor {
 /* --- Header --- */
 .site-header {
     background-color: var(--bg-light);
-    padding: 15px 0;
+    padding: 0.75rem;
+    font-weight: 700;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     position: sticky;
     top: 0;
     z-index: 3000; /* Keep header z-index lower than map overlays if they are viewport relative, but higher than page content */
     border-bottom: 3px solid var(--primary-color);
 }
-.header-flex { display: flex; justify-content: space-between; align-items: center; }
+.header-flex { display: flex; justify-content: space-between; align-items: baseline; }
 .logo-container { flex-shrink: 0; }
 .site-title {
     font-family: var(--heading-font); font-size: 1.8rem; font-weight: bold;
@@ -128,9 +129,15 @@ hr.content-divider-minor {
 .main-nav { margin-left: auto; }
 .main-nav ul { list-style: none; display: flex; gap: 25px; }
 .main-nav a {
-    font-family: var(--primary-font); font-weight: 700; font-size: 0.95rem;
-    text-transform: uppercase; color: var(--dark-text); padding: 10px 5px;
-    position: relative; letter-spacing: 0.5px; border-bottom: 2px solid transparent;
+    font-family: var(--primary-font);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--dark-text);
+    padding: 5px 5px; /* This padding affects vertical alignment/sizing */
+    position: relative;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid transparent;
     transition: color var(--transition-speed), border-bottom-color var(--transition-speed);
 }
 .main-nav a:hover,

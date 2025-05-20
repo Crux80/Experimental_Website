@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dam Rebuild Decision Score Calculator - Suffolk Ponds Initiative</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Applying site-wide styles and overriding/complementing Tailwind for sdss.html */
+        body.sdss-page {
+            font-family: var(--primary-font, 'Lato', sans-serif); /* Main site font */
+            background-color: var(--bg-light, #ffffff); /* Main site light background */
+            color: var(--dark-text, #333);
+        }
+
+        /* Headings to use Merriweather */
+        .sdss-page h1, .sdss-page h2, .sdss-page h3, .sdss-page h4,
+        .sdss-page .main-section-heading, .sdss-page .stakeholder-heading {
+            font-family: var(--heading-font, 'Merriweather', serif);
+            color: var(--primary-color, #005A9C);
+        }
+        .sdss-page .main-section-heading { /* Specific heading style from sdss */
+            font-size: 1.75rem; /* Adjusted from 1.5rem to match h2 from style.css better */
+            font-weight: 700; /* Merriweather bold */
+            margin-top: 2rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--primary-color, #005A9C);
+        }
+         .sdss-page .stakeholder-heading { /* Specific heading style from sdss */
+            font-size: 1.4rem; /* Adjusted */
+            font-weight: 700;
+            color: var(--secondary-color, #00A1DE); /* Using secondary for differentiation */
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color, #dddddd);
+        }
+        .sdss-page header .text-3xl { /* Main page title */
+            font-size: 2.5rem; /* Aligning with .section-title from style.css */
+            font-family: var(--heading-font, 'Merriweather', serif);
+            color: var(--primary-color, #005A9C);
+        }
+        .sdss-page p.text-gray-600 { /* Subtitle below main h1 */
+            color: var(--muted-text, #666666);
+        }
+
+
+        .question-group {
+            margin-bottom: 1.75rem;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .slider {
+            flex-grow: 1;
+            accent-color: var(--primary-color, #005A9C); /* Site primary color */
+            margin-right: 1rem;
+        }
+        .number-input-question, .number-input-iterations, .text-input-spatial, .number-input-weight, .confidence-select, .spatial-prompt-select, .dropdown-spatial, #selectDam, .cost-display-field {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color, #ced4da);
+            border-radius: var(--border-radius, 8px); /* Site border radius */
+            color: var(--dark-text, #495057);
+            background-color: #fff; /* Inputs generally white */
+            font-size: 0.9rem; /* Using Inter for form elements for clarity if Lato is too stylized */
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .number-input-question { width: 70px; text-align: center; }
+        .text-input-spatial { width: 100%; text-align: left; }
+        .latlon-input { width: 100%; text-align: center; }
+        .number-input-iterations { width: 90px; text-align: center; }
+        .number-input-weight { width: 80px; text-align: center; }
+        .dropdown-spatial, #selectDam { width: 100%; text-align: left; }
+        .cost-display-field {
+            background-color: var(--bg-medium, #e9ecef);
+            color: var(--dark-text, #333);
+            font-weight: 500;
+        }
+
+        .number-input-question:focus, .confidence-select:focus, .number-input-iterations:focus, .text-input-spatial:focus, .spatial-prompt-select:focus, .number-input-weight:focus, .dropdown-spatial:focus, #selectDam:focus {
+            outline: none;
+            border-color: var(--primary-color, #005A9C);
+            box-shadow: 0 0 0 0.2rem rgba(0, 90, 156, 0.25); /* Primary color with alpha */
+        }
+        .confidence-select-container, .spatial-prompt-container {
+            margin-top: 0.75rem;
+        }
+        .confidence-label, .spatial-prompt-label {
+            font-size: 0.875rem;
+            color: var(--muted-text, #555);
+            margin-right: 0.5rem;
+            font-weight: 500; /* Inter medium */
+            font-family: 'Inter', sans-serif;
+        }
+        .spatial-prompt-container {
+            padding: 0.75rem;
+            background-color: var(--bg-accent, #e9ecef); /* Site accent background */
+            border-radius: var(--border-radius, 0.375rem);
+            border: 1px solid var(--border-color, #dee2e6);
+        }
+
+        .weight-input-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--bg-medium, #e9ecef);
+        }
+        .weight-input-container:last-child { border-bottom: none; }
+        .weight-label {
+            flex-basis: 70%;
+            font-size: 0.9rem;
+            color: var(--dark-text, #333);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .map-placeholder {
+            height: 180px;
+            background-color: var(--bg-medium, #e9ecef);
+            border: 1px solid var(--border-color, #ced4da);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--muted-text, #6c757d);
+            font-style: italic;
+            border-radius: var(--border-radius, 0.375rem);
+            margin-top: 1rem;
+        }
+        #distanceToDamDisplay {
+            margin-top: 0.75rem;
+            padding: 0.5rem;
+            background-color: var(--bg-accent, #e6f0ff);
+            border: 1px solid var(--secondary-color, #b3d1ff); /* Light blue border */
+            border-radius: var(--border-radius, 0.375rem);
+            font-size: 0.9rem;
+            color: var(--primary-color, #004080);
+            text-align: center;
+        }
+
+        /*
+         Card styling:
+         style.css .card: background-color: var(--bg-light); padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow);
+         sdss.html .card (Tailwind originally): bg-white, rounded-lg (0.5rem), shadow-xl. Padding was via p-8 or similar.
+         The following aims to make sdss cards use the global card style as a base, retaining necessary specific padding.
+        */
+        .sdss-page #calculatorForm.card, .sdss-page #resultCard.card {
+            /* Inherits background, border-radius, box-shadow from style.css .card */
+            padding: 2rem; /* Retain specific padding for calculator content */
+            /* Tailwind mb-10 will still apply for margin */
+        }
+
+        /* Button styling will primarily come from style.css .btn, .btn-primary, .btn-secondary */
+        /* Remove Tailwind bg/color/border from buttons in HTML and rely on style.css classes */
+        /* Retain Tailwind for layout like w-full, sm:w-auto if needed */
+
+        .btn:disabled,
+        button:disabled { /* More general disabled style for all buttons if needed */
+            background-color: #adb5bd !important; /* Grey */
+            border-color: #adb5bd !important;
+            color: #fff !important;
+            cursor: not-allowed !important;
+            opacity: 0.7 !important;
+            transform: none !important; /* Prevent hover effects like translateY */
+        }
+
+
+        #resultCard { /* Specific to sdss */
+            border-left-width: 5px; /* This is a unique style for the result card */
+             /* border-color set by JS based on score */
+        }
+        .guidance-box {
+            background-color: var(--bg-accent, #e6f0ff); /* Site accent background */
+            border: 1px solid var(--secondary-color, #b3d1ff);
+            border-radius: var(--border-radius, 0.375rem);
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--primary-color, #004080);
+            font-family: 'Inter', sans-serif;
+        }
+        .guidance-box h4 {
+            font-weight: 600; /* Inter semibold */
+            color: var(--primary-color, #003366);
+            margin-bottom: 0.5rem;
+            font-family: var(--heading-font, 'Merriweather', serif); /* Make guidance box title also Merriweather */
+        }
+        #chartContainer, #histogramContainer {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: var(--bg-medium, #f8f9fa); /* Slightly off-white */
+            border-radius: var(--border-radius, 0.375rem);
+            border: 1px solid var(--border-color, #dee2e6);
+        }
+        #monteCarloSummary {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: var(--bg-medium, #e9ecef);
+            border: 1px solid var(--border-color, #ced4da);
+            border-radius: var(--border-radius, 0.375rem);
+            font-family: 'Inter', sans-serif;
+        }
+        #monteCarloSummary h4 {
+            font-weight: 600; /* Inter semibold */
+            color: var(--primary-color, #003366);
+            margin-bottom: 0.75rem;
+            font-family: var(--heading-font, 'Merriweather', serif);
+        }
+        #monteCarloSummary p {
+            font-size: 0.9rem;
+            color: var(--dark-text, #333);
+            margin-bottom: 0.3rem;
+        }
+
+        #totalScoreDisplay { color: var(--primary-color, #0056b3); }
+        #percentageScoreDisplay { color: var(--secondary-color, #0069d9); }
+        #interpretationArea .text-xl { /* "Interpretation:" sub-heading */
+            font-family: var(--heading-font, 'Merriweather', serif);
+            color: var(--dark-text, #003366); /* Darker than primary for less emphasis */
+            font-size: 1.25rem; /* From style.css h3 is 1.6rem, this is smaller */
+        }
+        #interpretationText {
+            color: var(--muted-text, #495057);
+            font-family: var(--primary-font, 'Lato', sans-serif);
+        }
+
+        /* Border colors for result card - using accent colors or status colors */
+        .border-professional-low { border-color: #28a745; } /* Green */
+        .border-professional-moderate { border-color: #ffc107; } /* Yellow/Gold - matches var(--accent-color) */
+        .border-professional-high { border-color: #fd7e14; } /* Orange */
+        .border-professional-critical { border-color: #dc3545; } /* Red */
+
+        .disclaimer-bg { background-color: var(--bg-medium, #f8f9fa); }
+        .disclaimer-border { border-color: var(--border-color, #dee2e6); }
+        .disclaimer-heading {
+            color: var(--primary-color, #004080);
+            font-family: var(--heading-font, 'Merriweather', serif);
+        }
+        .disclaimer-text {
+            color: var(--muted-text, #495057);
+            font-family: var(--primary-font, 'Lato', sans-serif);
+            font-size: 0.9rem; /* Slightly smaller */
+        }
+
+        label.form-label { /* Labels for inputs */
+            color: var(--dark-text, #333);
+            font-weight: 700; /* Lato bold */
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        /* Ensure container on this page doesn't get overly constrained by global style if sdss content needs more width */
+        .sdss-page .container {
+            /* max-width: var(--container-width, 1140px); /* Standard container width */
+            /* Keep the calculator's own max-width for its content block */
+        }
+        .sdss-page .site-header + main {
+             padding-top: 20px; /* Ensure space below fixed header */
+        }
+
+
+        @media (max-width: 768px) {
+            /* .card adjustments already in style.css */
+            .sdss-page header .text-3xl { font-size: 1.8rem; } /* mobile h1 */
+            .sdss-page .main-section-heading { font-size: 1.5rem; } /* mobile h2 */
+            .sdss-page .stakeholder-heading { font-size: 1.2rem; } /* mobile h3 */
+        }
+        @media (max-width: 640px) {
+            /* .card adjustments already in style.css */
+            .sdss-page header .text-3xl { font-size: 1.6rem; }
+            .sdss-page .main-section-heading { font-size: 1.3rem; }
+            .sdss-page .stakeholder-heading { font-size: 1.1rem; }
+
+            .weight-label { flex-basis: 100%; margin-bottom: 0.25rem; }
+            .weight-input-container { flex-direction: column; align-items: flex-start; }
+            .number-input-weight { width: 100%; }
+            .slider-container { flex-wrap: wrap; }
+            .slider { width: 100%; margin-bottom: 0.5rem; margin-right: 0;}
+            .number-input-question { width: 100%; }
+            .confidence-select-container, .spatial-prompt-container { display: flex; flex-direction: column; align-items: flex-start; }
+            .confidence-select, .spatial-prompt-select { width: 100%; margin-top: 0.25rem;}
+            .latlon-input-container { display: flex; flex-direction: column; gap: 0.5rem; }
+            .user-latlon-container { display: flex; flex-direction: column; gap: 0.5rem; }
+            .latlon-input { width: 100%; }
+            /* .btn class width from style.css should apply; Tailwind w-full for specific buttons if needed */
+            .flex-col.sm\:flex-row.sm\:justify-end { flex-direction: column; }
+        }
+    </style>
+</head>
+<body class="sdss-page"> 
+
+    <header class="site-header">
+        <div class="container header-flex">
+            <div class="logo-container">
+                <a href="index.html" class="site-title">Suffolk Ponds Initiative</a>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="issue-explained.html">The Issue</a></li>
+                    <li><a href="visualizations.html">Maps & Data</a></li>
+                    <li><a href="gallery.html">Gallery</a></li>
+                    <li><a href="engage.html">Get Involved</a></li>
+                    <li><a href="sdss.html" class="active">Dam Score Calculator</a></li>
+                </ul>
+            </nav>
+            <button class="mobile-nav-toggle" aria-label="Toggle Menu" aria-controls="main-nav-ul" aria-expanded="false">
+                <span class="sr-only">Menu</span>
+                ☰
+            </button>
+        </div>
+    </header>
+
+    <main class="section-padding">
+        <div class="container"> 
+            <div class="w-full max-w-3xl mx-auto">
+                <header class="text-center mb-10">
+                    <h1 class="font-bold">Dam Rebuild Decision Score Calculator</h1>
+                    <p class="mt-3 text-base">
+                        A comprehensive tool to assess dam rebuild viability based on stakeholder concerns, factor weights, and uncertainty analysis.
+                    </p>
+                    <div class="guidance-box mt-6 text-left">
+                        <h4>Mindfulness on Uncertainty & Bias:</h4>
+                        <p>When assigning scores and weights, please reflect on your confidence in each assessment and any potential personal or stakeholder biases that might influence your choices. This tool is designed to structure discussion and compare perspectives, not to provide a definitive "correct" answer. Consider discussing results with others to gain a broader understanding.</p>
+                    </div>
+                </header>
+
+                <div id="calculatorForm" class="card mb-10">
+                    <h2 class="main-section-heading">Spatial Context</h2>
+                    <div class="space-y-5 mt-4 p-5 border border-gray-200 rounded-lg bg-gray-50">
+                        <div>
+                            <label for="selectDam" class="form-label">Select Dam for Assessment:</label>
+                            <select id="selectDam" name="selectDam" class="dropdown-spatial">
+                                <option value="" selected>Select a Dam...</option>
+                                <option value="Stump Pond, Blydenburgh County Park, Smithtown">Stump Pond, Blydenburgh County Park, Smithtown</option>
+                                <option value="Mill Pond, Stonybrook, New York">Mill Pond, Stonybrook, New York</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="damName" class="form-label">Dam Name or Identifier:</label>
+                            <input type="text" id="damName" name="damName" class="text-input-spatial" placeholder="Auto-filled or enter manually">
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-5 sm:space-y-0 latlon-input-container">
+                            <div class="flex-1">
+                                <label for="damLatitude" class="form-label">Dam Approx. Latitude:</label>
+                                <input type="text" id="damLatitude" name="damLatitude" class="text-input-spatial latlon-input" placeholder="e.g., 40.8368">
+                            </div>
+                            <div class="flex-1">
+                                <label for="damLongitude" class="form-label">Dam Approx. Longitude:</label>
+                                <input type="text" id="damLongitude" name="damLongitude" class="text-input-spatial latlon-input" placeholder="e.g., -73.2226">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="estimatedCost" class="form-label">Estimated Rebuild Cost:</label>
+                            <input type="text" id="estimatedCost" name="estimatedCost" class="text-input-spatial cost-display-field" readonly placeholder="Auto-filled when dam selected">
+                        </div>
+                        <div>
+                            <label for="watershedName" class="form-label">Watershed / River Basin Name:</label>
+                            <input type="text" id="watershedName" name="watershedName" class="text-input-spatial">
+                        </div>
+                        <div>
+                            <label for="damPurpose" class="form-label">Primary Purpose of Dam:</label>
+                            <select id="damPurpose" name="damPurpose" class="dropdown-spatial">
+                                <option value="Unknown" selected>Unknown</option>
+                                <option value="Water Supply">Water Supply</option>
+                                <option value="Hydropower">Hydropower</option>
+                                <option value="Flood Control">Flood Control</option>
+                                <option value="Recreation">Recreation</option>
+                                <option value="Irrigation">Irrigation</option>
+                                <option value="Navigation">Navigation</option>
+                                <option value="Tailings">Tailings Storage</option>
+                                <option value="Multiple">Multiple Purposes</option>
+                                <option value="Other">Other (Specify if known)</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
+                            <div>
+                                <label for="downstreamCommunityName" class="form-label">Nearest Downstream Community Name:</label>
+                                <input type="text" id="downstreamCommunityName" name="downstreamCommunityName" class="text-input-spatial">
+                            </div>
+                            <div>
+                                <label for="downstreamCommunityDistance" class="form-label">Approx. Distance to Community (e.g., 5 km):</label>
+                                <input type="text" id="downstreamCommunityDistance" name="downstreamCommunityDistance" class="text-input-spatial">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="downstreamLandUse" class="form-label">Primary Land Use Immediately Downstream:</label>
+                            <select id="downstreamLandUse" name="downstreamLandUse" class="dropdown-spatial">
+                                <option value="Unknown" selected>Unknown</option>
+                                <option value="Agriculture">Agriculture</option>
+                                <option value="Forest/Natural">Forest/Natural Area</option>
+                                <option value="Residential - Low Density">Residential - Low Density</option>
+                                <option value="Residential - High Density">Residential - High Density</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Industrial">Industrial</option>
+                                <option value="Protected Area">Protected Area (Park, Reserve, etc.)</option>
+                                <option value="Mixed Use">Mixed Use</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-5 pt-5 border-t border-gray-300">
+                            <h4 class="text-md font-semibold text-gray-700 mb-3" style="font-family: var(--heading-font, 'Merriweather', serif); color: var(--primary-color); font-size: 1.1rem;">Calculate Distance to Dam:</h4>
+                            <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-5 sm:space-y-0 user-latlon-container mb-3">
+                                <div class="flex-1">
+                                    <label for="userLatitude" class="form-label">Your Approx. Latitude:</label>
+                                    <input type="text" id="userLatitude" name="userLatitude" class="text-input-spatial latlon-input" placeholder="Enter your latitude">
+                                </div>
+                                <div class="flex-1">
+                                    <label for="userLongitude" class="form-label">Your Approx. Longitude:</label>
+                                    <input type="text" id="userLongitude" name="userLongitude" class="text-input-spatial latlon-input" placeholder="Enter your longitude">
+                                </div>
+                            </div>
+                            <button type="button" id="calculateDistanceButton" class="btn btn-primary w-full sm:w-auto">Calculate My Distance to Selected Dam</button>
+                            <div id="distanceToDamDisplay" class="hidden mt-3"></div>
+                            <p class="text-xs text-gray-500 mt-2" style="font-family: var(--primary-font, 'Lato', sans-serif); color: var(--muted-text);">Note: This provides an approximate "as-the-crow-flies" distance.</p>
+                        </div>
+
+                        <div id="mapPlaceholder" class="map-placeholder">
+                             Future Map Integration: An interactive map will be displayed here.
+                        </div>
+                    </div>
+
+                    <h2 class="main-section-heading">Factor Assessment by Stakeholder</h2>
+                    <div id="questionsContainerDiv">
+                        
+                    </div>
+
+                    <h2 class="main-section-heading">Adjust Factor Weights</h2>
+                    <div id="weightsSection" class="space-y-3">
+                       
+                    </div>
+
+                    <h2 class="main-section-heading">Uncertainty Analysis (Monte Carlo Simulation)</h2>
+                   
+                    <div class="mt-4 p-5 border border-gray-200 rounded-lg bg-gray-50">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-4 sm:space-y-0">
+                            <div>
+                                <label for="monteCarloIterations" class="form-label">Number of Simulations:</label>
+                                <input type="number" id="monteCarloIterations" value="1000" min="100" max="10000" step="100" class="number-input-iterations">
+                            </div>
+                            
+                            <button type="button" id="runMonteCarloButton" class="btn btn-primary w-full sm:w-auto self-end sm:self-center">Run Uncertainty Analysis</button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3" style="font-family: var(--primary-font, 'Lato', sans-serif); color: var(--muted-text);">Note: Higher iterations provide more accuracy but take longer to compute.</p>
+                    </div>
+
+                    
+                    <div class="mt-10 flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3">
+                        <button type="button" id="resetButton" class="btn btn-secondary w-full sm:w-auto">Reset All</button>
+                        <button type="button" id="calculateButton" class="btn btn-primary w-full sm:w-auto">Calculate Deterministic Score</button>
+                    </div>
+                </div> 
+
+                <section id="resultsSection" class="hidden">
+                     
+                    <div id="resultCard" class="card">
+                        <h2 class="text-2xl sm:text-3xl font-semibold text-center mb-6" style="font-family: var(--heading-font); color: var(--primary-color);">Rebuild Score & Assessment</h2>
+
+                        <div id="deterministicScoreSection">
+                            <div class="text-center mb-8">
+                                <p class="text-xl" style="color: var(--muted-text); font-family: var(--primary-font);">Total Rebuild Urgency Score (Deterministic):</p>
+                                <p id="totalScoreDisplay" class="text-6xl font-bold my-2">0 / 100</p>
+                                <p id="percentageScoreDisplay" class="text-3xl font-semibold mb-3">(0%)</p>
+                            </div>
+                            <div id="interpretationArea" class="mb-6">
+                                <h3 class="text-xl font-semibold mb-2">Interpretation:</h3>
+                                <p id="interpretationText" class="text-base"></p>
+                            </div>
+                        </div>
+
+                        <div id="chartContainer" class="hidden">
+                            <h4 class="text-lg font-semibold text-center mb-3" style="font-family: var(--heading-font); color: var(--dark-text);">Weighted Factor Scores</h4>
+                            <canvas id="weightedScoreChart"></canvas>
+                        </div>
+
+                        <div id="monteCarloResultsSection" class="hidden mt-8 pt-8 border-t-2 border-gray-300">
+                            <h3 class="text-2xl font-semibold text-center mb-6" style="font-family: var(--heading-font); color: var(--primary-color);">Monte Carlo Simulation Results</h3>
+                            <div id="monteCarloSummary" class="mb-6">
+                                <h4 class="text-lg text-center font-semibold">Distribution of Total Scores:</h4>
+                                
+                            </div>
+                            <div id="histogramContainer" class="mt-4">
+                                 <h4 class="text-lg font-semibold text-center mb-3" style="font-family: var(--heading-font); color: var(--dark-text);">Total Score Distribution Histogram</h4>
+                                <canvas id="monteCarloHistogramChart"></canvas>
+                            </div>
+                        </div>
+
+
+                        <div id="confidenceSummary" class="mt-8 p-4 rounded-md border" style="background-color: var(--bg-medium); border-color: var(--border-color);">
+                             <h4 class="text-lg font-semibold mb-3" style="font-family: var(--heading-font); color: var(--dark-text);">Confidence Overview (for Deterministic Score):</h4>
+                             <ul id="lowConfidenceList" class="list-disc list-inside text-base" style="color: var(--muted-text); font-family: var(--primary-font);"></ul>
+                             <p id="noLowConfidenceItems" class="text-base hidden" style="color: var(--muted-text); font-family: var(--primary-font);">All factors assessed with Medium or High confidence.</p>
+                        </div>
+                         <div class="mt-8 p-4 disclaimer-bg border disclaimer-border rounded-md">
+                            <h4 class="font-semibold disclaimer-heading mb-2">Disclaimer:</h4>
+                            <p class="text-sm disclaimer-text">This calculator provides a simplified score for illustrative and educational purposes only. A comprehensive dam rebuild assessment requires detailed engineering, environmental, economic, and social studies by qualified professionals. Do not base real-world decisions solely on this tool.</p>
+                        </div>
+                    </div>
+                </section>
+            </div> 
+        </div> 
+    </main>
+
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <div class="footer-nav">
+                <a href="about.html">About Us</a> | <a href="contact.html">Contact</a> | <a href="privacy.html">Privacy Policy</a> </div>
+            <p>&copy; <span id="currentYearDynamic"></span> Suffolk Ponds Initiative. All Rights Reserved.</p>
+            <p class="disclaimer">A community information resource for Stony Brook Mill Pond & Smithtown's Stump Pond.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Configuration for questions: id, stakeholder, label, description, defaultWeight, defaultConfidence, [spatialPromptText, spatialPromptID, spatialPromptDefault]
+        const questionsConfig = [
+            // Resident Concerns
+            {
+                id: 'q_res_safety', stakeholder: 'Residents', label: "1. Resident Safety & Security",
+                description: "How high is the perceived risk to resident safety and property from potential dam failure or operational issues? (1 = Very Low Risk, 10 = Very High Risk)",
+                defaultWeight: 1.5, defaultConfidence: "High",
+                spatialPromptText: "Is dam upstream of significant population/infrastructure?", spatialPromptID: "q_res_safety_spatial", spatialPromptDefault: "Unknown"
+            },
+            {
+                id: 'q_res_property', stakeholder: 'Residents', label: "2. Impact on Property Values & Use",
+                description: "How significantly would dam rebuild/removal affect local property values and residents' use/enjoyment of their properties? (1 = Very Positive/No Impact, 10 = Very Negative Impact)",
+                defaultWeight: 1.0, defaultConfidence: "High"
+            },
+            {
+                id: 'q_res_water_recreation', stakeholder: 'Residents', label: "3. Water Supply & Recreational Access",
+                description: "How critical is the dam for reliable local water supply and/or for providing recreational opportunities (boating, fishing) valued by residents? (1 = Not Critical, 10 = Absolutely Critical)",
+                defaultWeight: 1.0, defaultConfidence: "High"
+            },
+
+            // Conservationist Concerns
+            {
+                id: 'q_con_ecosystem', stakeholder: 'Conservationists', label: "4. Aquatic & Riparian Ecosystem Health",
+                description: "How severe is the current dam's negative impact on river ecosystems, fish passage, and riparian habitats? (1 = Minimal/Positive Impact, 10 = Severe Negative Impact)",
+                defaultWeight: 1.5, defaultConfidence: "High",
+                spatialPromptText: "Are critical habitats known immediately downstream?", spatialPromptID: "q_con_ecosystem_spatial", spatialPromptDefault: "Unknown"
+            },
+            {
+                id: 'q_con_restoration_potential', stakeholder: 'Conservationists', label: "5. Environmental Restoration Potential",
+                description: "How significant are the potential ecological benefits (e.g., habitat restoration, biodiversity) if the dam is rebuilt to modern environmental standards OR removed? (1 = Negligible, 10 = Highly Significant)",
+                defaultWeight: 1.5, defaultConfidence: "High"
+            },
+            {
+                id: 'q_con_water_quality', stakeholder: 'Conservationists', label: "6. Downstream Water Quality",
+                description: "How significantly does the current dam negatively affect downstream water quality, and what is the potential for improvement? (1 = No Negative Impact/High Potential, 10 = Severe Negative Impact/Low Potential)",
+                defaultWeight: 1.0, defaultConfidence: "High"
+            },
+
+            // Local Government Concerns
+            {
+                id: 'q_gov_financial', stakeholder: 'Local Government', label: "7. Financial Viability & Burden",
+                description: "Considering rebuild costs, ongoing maintenance, and potential revenue/grants, how financially viable/burdensome is the project for the local government? (1 = Highly Viable/Low Burden, 10 = Not Viable/Extreme Burden)",
+                defaultWeight: 1.5, defaultConfidence: "High"
+            },
+            {
+                id: 'q_gov_economic_dev', stakeholder: 'Local Government', label: "8. Local Economic Development & Services",
+                description: "How important is the dam (or its absence/rebuild) for local economic drivers (e.g., tourism, industry, agriculture) and essential services reliant on it? (1 = Not Important, 10 = Critically Important)",
+                defaultWeight: 1.0, defaultConfidence: "High"
+            },
+            {
+                id: 'q_gov_liability_compliance', stakeholder: 'Local Government', label: "9. Liability & Regulatory Compliance",
+                description: "How significant are the current/future liability risks and challenges in meeting regulatory/safety standards with the existing dam? (1 = Very Low Risk/Easy Compliance, 10 = Very High Risk/Difficult Compliance)",
+                defaultWeight: 1.0, defaultConfidence: "High"
+            },
+            {
+                id: 'q_gov_stakeholder_alignment', stakeholder: 'Local Government', label: "10. Overall Stakeholder & Public Alignment",
+                description: "How aligned are various public, private, and community stakeholders regarding the future of the dam? (1 = Strong Consensus, 10 = Strong Disagreement/Conflict)",
+                defaultWeight: 0.5, defaultConfidence: "High"
+            }
+        ];
+
+        const questionValueMin = 1;
+        const questionValueMax = 10;
+        const questionValueDefault = 5;
+
+        const weightValueMin = 0.1;
+        const weightValueMax = 5.0;
+        const weightValueStep = 0.1;
+
+        const confidenceLevels = ["High", "Medium", "Low"];
+        const spatialPromptOptions = ["Yes", "No", "Unknown"];
+        const confidenceUncertainty = {
+            "High": 1, "Medium": 2, "Low": 3
+        };
+
+        const predefinedDams = {
+            "Stump Pond, Blydenburgh County Park, Smithtown": {
+                name: "Stump Pond, Blydenburgh County Park, Smithtown",
+                latitude: 40.8368,
+                longitude: -73.2226,
+                watershed: "Nissequogue River",
+                purpose: "Recreation",
+                cost: "$6.6M (Initial Planning); Full Cost TBD"
+            },
+            "Mill Pond, Stonybrook, New York": {
+                name: "Mill Pond, Stonybrook, New York",
+                latitude: 40.9160,
+                longitude: -73.1380,
+                watershed: "Stony Brook Harbor Watershed",
+                purpose: "Recreation",
+                cost: "Approx. $10 Million"
+            }
+        };
+
+
+        const questionsContainerDiv = document.getElementById('questionsContainerDiv');
+        const weightsContainer = document.getElementById('weightsSection');
+        const selectDamElement = document.getElementById('selectDam');
+        const damNameInputElement = document.getElementById('damName');
+        const damLatitudeInputElement = document.getElementById('damLatitude');
+        const damLongitudeInputElement = document.getElementById('damLongitude');
+        const estimatedCostInputElement = document.getElementById('estimatedCost');
+        const userLatitudeInput = document.getElementById('userLatitude');
+        const userLongitudeInput = document.getElementById('userLongitude');
+        const distanceDisplayDiv = document.getElementById('distanceToDamDisplay');
+
+        let scoreChart = null;
+        let histogramChart = null;
+
+        selectDamElement.addEventListener('change', function() {
+            const selectedDamKey = this.value;
+            if (selectedDamKey && predefinedDams[selectedDamKey]) {
+                const damData = predefinedDams[selectedDamKey];
+                damNameInputElement.value = damData.name;
+                damLatitudeInputElement.value = damData.latitude.toString();
+                damLongitudeInputElement.value = damData.longitude.toString();
+                estimatedCostInputElement.value = damData.cost || "";
+            } else {
+                damNameInputElement.value = '';
+                damLatitudeInputElement.value = '';
+                damLongitudeInputElement.value = '';
+                estimatedCostInputElement.value = '';
+            }
+            distanceDisplayDiv.classList.add('hidden');
+            distanceDisplayDiv.textContent = '';
+        });
+
+
+        function createQuestionInputs() {
+            questionsContainerDiv.innerHTML = '';
+            const stakeholders = ['Residents', 'Conservationists', 'Local Government'];
+
+            stakeholders.forEach(stakeholderName => {
+                const sectionHeading = document.createElement('h3');
+                sectionHeading.className = 'stakeholder-heading'; // Styled by internal CSS
+                // Text content for these headings is more complex due to numbering, handle carefully
+                if (stakeholders.indexOf(stakeholderName) === 0) sectionHeading.textContent = `I. ${stakeholderName} Concerns`;
+                else if (stakeholders.indexOf(stakeholderName) === 1) sectionHeading.textContent = `II. ${stakeholderName} Concerns`;
+                else if (stakeholders.indexOf(stakeholderName) === 2) sectionHeading.textContent = `III. ${stakeholderName} Concerns`;
+                questionsContainerDiv.appendChild(sectionHeading);
+
+
+                const questionsForStakeholder = questionsConfig.filter(q => q.stakeholder === stakeholderName);
+
+                questionsForStakeholder.forEach(q => {
+                    const group = document.createElement('div');
+                    group.className = 'question-group';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = q.id;
+                    label.className = 'form-label'; // Styled by internal CSS
+                    label.textContent = q.label;
+                    group.appendChild(label);
+
+                    const description = document.createElement('p');
+                    // Tailwind classes for font size and color
+                    description.className = 'text-xs text-gray-500 mb-2';
+                    description.style.fontFamily = "var(--primary-font, 'Lato', sans-serif)"; // Ensure Lato
+                    description.style.color = "var(--muted-text, #666)";
+                    description.textContent = q.description;
+                    group.appendChild(description);
+
+                    if (q.spatialPromptText && q.spatialPromptID) {
+                        const spatialContainer = document.createElement('div');
+                        spatialContainer.className = 'spatial-prompt-container mb-2'; // Styled by internal CSS
+
+                        const spatialLabel = document.createElement('label');
+                        spatialLabel.htmlFor = q.spatialPromptID;
+                        spatialLabel.className = 'spatial-prompt-label'; // Styled by internal CSS
+                        spatialLabel.textContent = q.spatialPromptText;
+                        spatialContainer.appendChild(spatialLabel);
+
+                        const spatialSelect = document.createElement('select');
+                        spatialSelect.id = q.spatialPromptID;
+                        spatialSelect.className = 'spatial-prompt-select'; // Styled by internal CSS
+                        spatialPromptOptions.forEach(level => {
+                            const option = document.createElement('option');
+                            option.value = level;
+                            option.textContent = level;
+                            if (level === q.spatialPromptDefault) option.selected = true;
+                            spatialSelect.appendChild(option);
+                        });
+                        spatialContainer.appendChild(spatialSelect);
+                        group.appendChild(spatialContainer);
+                    }
+
+
+                    const sliderContainer = document.createElement('div');
+                    sliderContainer.className = 'slider-container'; // Styled by internal CSS
+
+                    const slider = document.createElement('input');
+                    slider.type = 'range'; slider.id = q.id; slider.name = q.id;
+                    slider.min = questionValueMin; slider.max = questionValueMax; slider.value = questionValueDefault;
+                    slider.className = 'slider'; // Styled by internal CSS
+
+                    const numberInput = document.createElement('input');
+                    numberInput.type = 'number'; numberInput.id = q.id + 'NumInput';
+                    numberInput.min = questionValueMin; numberInput.max = questionValueMax; numberInput.value = questionValueDefault;
+                    numberInput.className = 'number-input-question'; // Styled by internal CSS
+
+                    slider.addEventListener('input', () => numberInput.value = slider.value);
+                    numberInput.addEventListener('input', () => {
+                        let val = parseInt(numberInput.value);
+                        if (isNaN(val) || val < questionValueMin) val = questionValueMin;
+                        if (val > questionValueMax) val = questionValueMax;
+                        numberInput.value = val; slider.value = val;
+                    });
+                    numberInput.addEventListener('change', () => {
+                        let val = parseInt(numberInput.value);
+                        if (isNaN(val)) { numberInput.value = questionValueDefault; slider.value = questionValueDefault; return; }
+                        if (val < questionValueMin) {numberInput.value = questionValueMin; slider.value = questionValueMin; }
+                        else if (val > questionValueMax) {numberInput.value = questionValueMax; slider.value = questionValueMax; }
+                        else { slider.value = val; }
+                    });
+
+                    sliderContainer.appendChild(slider);
+                    sliderContainer.appendChild(numberInput);
+                    group.appendChild(sliderContainer);
+
+                    const confidenceContainer = document.createElement('div');
+                    confidenceContainer.className = 'confidence-select-container'; // Styled by internal CSS
+
+                    const confidenceLabel = document.createElement('label');
+                    confidenceLabel.htmlFor = q.id + 'Confidence';
+                    confidenceLabel.className = 'confidence-label'; // Styled by internal CSS
+                    confidenceLabel.textContent = 'Confidence in score:';
+                    confidenceContainer.appendChild(confidenceLabel);
+
+                    const confidenceSelect = document.createElement('select');
+                    confidenceSelect.id = q.id + 'Confidence';
+                    confidenceSelect.className = 'confidence-select'; // Styled by internal CSS
+                    confidenceLevels.forEach(level => {
+                        const option = document.createElement('option');
+                        option.value = level;
+                        option.textContent = level;
+                        if (level === q.defaultConfidence) option.selected = true;
+                        confidenceSelect.appendChild(option);
+                    });
+                    confidenceContainer.appendChild(confidenceSelect);
+                    group.appendChild(confidenceContainer);
+                    questionsContainerDiv.appendChild(group);
+                });
+            });
+        }
+
+        function createWeightInputs() {
+            weightsContainer.innerHTML = '';
+            const stakeholders = ['Residents', 'Conservationists', 'Local Government'];
+
+            stakeholders.forEach(stakeholderName => {
+                const questionsForStakeholder = questionsConfig.filter(q => q.stakeholder === stakeholderName);
+                if (questionsForStakeholder.length === 0) return;
+
+                const sectionHeading = document.createElement('h4');
+                // Tailwind classes for font size/weight, color from internal CSS
+                sectionHeading.className = 'text-md font-semibold text-gray-700 mt-4 mb-2';
+                sectionHeading.style.fontFamily = "var(--heading-font, 'Merriweather', serif)";
+                sectionHeading.style.color = "var(--dark-text)"; // Or var(--primary-color) if preferred
+                sectionHeading.style.fontSize = "1.1rem";
+                sectionHeading.textContent = `${stakeholderName} Factor Weights:`;
+                weightsContainer.appendChild(sectionHeading);
+
+                questionsForStakeholder.forEach(q => {
+                    const container = document.createElement('div');
+                    container.className = 'weight-input-container'; // Styled by internal CSS
+                    const label = document.createElement('label');
+                    label.htmlFor = q.id + 'WeightInput';
+                    label.className = 'weight-label'; // Styled by internal CSS
+                    label.textContent = q.label.substring(q.label.indexOf('.') + 2) + " Weight:";
+                    container.appendChild(label);
+
+                    const weightInput = document.createElement('input');
+                    weightInput.type = 'number'; weightInput.id = q.id + 'WeightInput';
+                    weightInput.min = weightValueMin; weightInput.max = weightValueMax; weightInput.step = weightValueStep;
+                    weightInput.value = q.defaultWeight.toFixed(1);
+                    weightInput.className = 'number-input-weight'; // Styled by internal CSS
+
+                    weightInput.addEventListener('change', () => {
+                        let val = parseFloat(weightInput.value);
+                        if (isNaN(val)) { weightInput.value = q.defaultWeight.toFixed(1); return; }
+                        if (val < weightValueMin) val = weightValueMin; if (val > weightValueMax) val = weightValueMax;
+                        weightInput.value = val.toFixed(1);
+                    });
+                    container.appendChild(weightInput);
+                    weightsContainer.appendChild(container);
+                });
+            });
+        }
+
+        function calculateCurrentMaxPossibleScore() {
+            let currentMaxScore = 0;
+            questionsConfig.forEach(q => {
+                const weightInput = document.getElementById(q.id + 'WeightInput');
+                if (weightInput) {
+                    currentMaxScore += parseFloat(weightInput.value) * questionValueMax;
+                }
+            });
+            return currentMaxScore;
+        }
+
+        function displayConfidenceSummary() {
+            const lowConfidenceListEl = document.getElementById('lowConfidenceList');
+            const noLowConfidenceItemsEl = document.getElementById('noLowConfidenceItems');
+            lowConfidenceListEl.innerHTML = '';
+            let lowConfidenceItemsFound = false;
+
+            questionsConfig.forEach(q => {
+                const confidenceSelect = document.getElementById(q.id + 'Confidence');
+                if (confidenceSelect && confidenceSelect.value === "Low") {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = q.label.substring(q.label.indexOf('.') + 2);
+                    lowConfidenceListEl.appendChild(listItem);
+                    lowConfidenceItemsFound = true;
+                }
+            });
+
+            noLowConfidenceItemsEl.classList.toggle('hidden', lowConfidenceItemsFound);
+            lowConfidenceListEl.classList.toggle('hidden', !lowConfidenceItemsFound);
+        }
+
+        function renderWeightedScoreChart(factorNames, weightedScores) {
+            const ctx = document.getElementById('weightedScoreChart').getContext('2d');
+            if (scoreChart) scoreChart.destroy();
+
+            const sitePrimaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || 'rgba(0, 86, 179, 0.7)';
+            const siteSecondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim() || 'rgba(0, 123, 255, 0.7)';
+
+
+            const chartColors = factorNames.map((_, index) => index % 2 === 0 ? sitePrimaryColor : siteSecondaryColor);
+            const chartBorderColors = chartColors.map(color => color.replace('0.7', '1')); // Assuming alpha is 0.7
+
+            scoreChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: factorNames,
+                    datasets: [{
+                        label: 'Weighted Score (Score * Weight)',
+                        data: weightedScores,
+                        backgroundColor: chartColors,
+                        borderColor: chartBorderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Weighted Score Value', font: {size: 14, weight: '500', family: "var(--primary-font, 'Lato')"}},
+                            ticks: { font: { family: "var(--primary-font, 'Lato')"}}
+                        },
+                        x: {
+                            ticks: { autoSkip: false, maxRotation: 45, minRotation: 30, font: {size: 12, family: "var(--primary-font, 'Lato')"}}
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                           backgroundColor: 'var(--dark-text, #333)', titleFont: {size: 14, family: "var(--primary-font, 'Lato')"}, bodyFont: {size: 12, family: "var(--primary-font, 'Lato')"},
+                           callbacks: { label: context => `${context.dataset.label || ''}: ${context.parsed.y !== null ? context.parsed.y.toFixed(1) : ''}`}
+                        }
+                    }
+                }
+            });
+        }
+
+        function calculateAndDisplayDeterministicScore() {
+            let totalScore = 0;
+            const factorNamesForChart = [];
+            const weightedScoresForChart = [];
+
+            questionsConfig.forEach(q => {
+                const slider = document.getElementById(q.id);
+                const weightInput = document.getElementById(q.id + 'WeightInput');
+                if (slider && weightInput) {
+                    const score = parseInt(slider.value);
+                    const weight = parseFloat(weightInput.value);
+                    const weightedScore = score * weight;
+                    totalScore += weightedScore;
+                    factorNamesForChart.push(q.label.substring(q.label.indexOf('.') + 2));
+                    weightedScoresForChart.push(weightedScore);
+                }
+            });
+
+            const currentMaxPossibleScore = calculateCurrentMaxPossibleScore();
+            const percentageScore = currentMaxPossibleScore > 0 ? Math.round((totalScore / currentMaxPossibleScore) * 100) : 0;
+
+            document.getElementById('totalScoreDisplay').textContent = `${totalScore.toFixed(1)} / ${currentMaxPossibleScore.toFixed(1)}`;
+            document.getElementById('percentageScoreDisplay').textContent = `(${percentageScore}%)`;
+
+            let interpretation = "";
+            const borderClassesToRemove = ['border-professional-low', 'border-professional-moderate', 'border-professional-high', 'border-professional-critical', 'border-gray-300'];
+            let resultCardNewBorderClass = "border-gray-300"; // Fallback
+
+            if (percentageScore <= 25) {
+                interpretation = "Low Overall Urgency/Priority: The current assessment, considering all stakeholder inputs and their assigned weights, suggests a lower overall priority for immediate major action on the dam. Focus may be on continued monitoring, minor specific interventions, or further dialogue.";
+                resultCardNewBorderClass = "border-professional-low";
+            } else if (percentageScore <= 50) {
+                interpretation = "Moderate Overall Urgency/Priority: The assessment indicates a mixed set of concerns or moderate urgency across stakeholder perspectives. Further detailed studies, targeted mitigation efforts, and consensus-building are likely warranted before committing to large-scale solutions.";
+                resultCardNewBorderClass = "border-professional-moderate";
+            } else if (percentageScore <= 75) {
+                interpretation = "High Overall Urgency/Priority: The combined inputs point towards a strong case for significant action regarding the dam. Multiple stakeholder concerns likely contribute to this, suggesting that comprehensive planning for major refurbishment, rebuild, or removal should be actively pursued.";
+                resultCardNewBorderClass = "border-professional-high";
+            } else {
+                interpretation = "Very High/Critical Overall Urgency/Priority: The assessment strongly suggests that the dam situation requires immediate and decisive action. Critical issues impacting one or more key stakeholder groups are likely dominant. Swift progression towards a solution is recommended.";
+                resultCardNewBorderClass = "border-professional-critical";
+            }
+            document.getElementById('interpretationText').textContent = interpretation;
+
+            const resultCard = document.getElementById('resultCard');
+            borderClassesToRemove.forEach(cls => resultCard.classList.remove(cls));
+            resultCard.classList.add(resultCardNewBorderClass);
+
+            displayConfidenceSummary();
+            renderWeightedScoreChart(factorNamesForChart, weightedScoresForChart);
+
+            document.getElementById('deterministicScoreSection').classList.remove('hidden');
+            document.getElementById('chartContainer').classList.remove('hidden');
+            document.getElementById('monteCarloResultsSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' }); // scroll to whole results
+        }
+
+        function runMonteCarloSimulation() {
+            const runButton = document.getElementById('runMonteCarloButton');
+            runButton.disabled = true;
+            // runButton.textContent = 'Running...'; // Text content is handled by .btn from style.css
+
+            setTimeout(() => {
+                const numIterationsInput = document.getElementById('monteCarloIterations');
+                const numIterations = parseInt(numIterationsInput.value);
+                if (isNaN(numIterations) || numIterations < 100 || numIterations > 10000) {
+                    alert("Please enter a valid number of iterations (100-10000).");
+                    runButton.disabled = false;
+                    // runButton.textContent = 'Run Uncertainty Analysis';
+                    return;
+                }
+
+                const simulatedTotalScores = [];
+
+                for (let i = 0; i < numIterations; i++) {
+                    let currentIterationTotalScore = 0;
+                    questionsConfig.forEach(q => {
+                        const baseScoreEl = document.getElementById(q.id + 'NumInput');
+                        const confidenceEl = document.getElementById(q.id + 'Confidence');
+                        const weightEl = document.getElementById(q.id + 'WeightInput');
+
+                        if (baseScoreEl && confidenceEl && weightEl) {
+                            const baseScore = parseInt(baseScoreEl.value);
+                            const confidence = confidenceEl.value;
+                            const weight = parseFloat(weightEl.value);
+                            const uncertainty = confidenceUncertainty[confidence] || 0;
+                            const minSample = Math.max(questionValueMin, baseScore - uncertainty);
+                            const maxSample = Math.min(questionValueMax, baseScore + uncertainty);
+                            const actualMin = Math.min(minSample, maxSample);
+                            const actualMax = Math.max(minSample, maxSample);
+                            const sampledScore = Math.floor(Math.random() * (actualMax - actualMin + 1)) + actualMin;
+                            currentIterationTotalScore += sampledScore * weight;
+                        }
+                    });
+                    simulatedTotalScores.push(currentIterationTotalScore);
+                }
+
+                displayMonteCarloResults(simulatedTotalScores);
+
+                runButton.disabled = false;
+                // runButton.textContent = 'Run Uncertainty Analysis';
+                document.getElementById('monteCarloResultsSection').scrollIntoView({ behavior: 'smooth' });
+            }, 50);
+        }
+
+        function displayMonteCarloResults(scores) {
+            scores.sort((a, b) => a - b);
+            const n = scores.length;
+            const sum = scores.reduce((acc, val) => acc + val, 0);
+            const mean = sum / n;
+            const median = n % 2 === 0 ? (scores[n/2 - 1] + scores[n/2]) / 2 : scores[Math.floor(n/2)];
+            const p5 = scores[Math.floor(n * 0.05)];
+            const p95 = scores[Math.floor(n * 0.95)];
+
+            const summaryDiv = document.getElementById('monteCarloSummary');
+            summaryDiv.innerHTML = `
+                <h4 class="text-lg text-center font-semibold">Distribution of Total Scores (${n} simulations):</h4>
+                <p><strong>Mean Total Score:</strong> ${mean.toFixed(1)}</p>
+                <p><strong>Median Total Score:</strong> ${median.toFixed(1)}</p>
+                <p><strong>5th Percentile:</strong> ${p5.toFixed(1)}</p>
+                <p><strong>95th Percentile:</strong> ${p95.toFixed(1)}</p>
+                <p class="text-xs mt-2" style="font-family: var(--primary-font, 'Lato'); color: var(--muted-text);">This indicates that 90% of simulated total scores fall between ${p5.toFixed(1)} and ${p95.toFixed(1)}.</p>
+            `;
+
+            renderHistogramChart(scores);
+            document.getElementById('deterministicScoreSection').classList.add('hidden');
+            document.getElementById('chartContainer').classList.add('hidden');
+            document.getElementById('monteCarloResultsSection').classList.remove('hidden');
+            document.getElementById('resultsSection').classList.remove('hidden');
+        }
+
+        function renderHistogramChart(scores) {
+            const ctx = document.getElementById('monteCarloHistogramChart').getContext('2d');
+            if (histogramChart) histogramChart.destroy();
+
+            const sitePrimaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || 'rgba(0, 86, 179, 0.7)';
+            const sitePrimaryColorBorder = sitePrimaryColor.replace('0.7', '1'); // Assuming alpha is 0.7
+
+            const minScore = Math.min(...scores);
+            const maxScore = Math.max(...scores);
+            const numBins = Math.min(20, Math.ceil(Math.sqrt(scores.length)));
+            const binWidth = (maxScore - minScore) / numBins > 0 ? (maxScore - minScore) / numBins : 1;
+
+            const bins = [];
+            const labels = [];
+            for (let i = 0; i < numBins; i++) {
+                const binStart = minScore + i * binWidth;
+                const binEnd = minScore + (i + 1) * binWidth;
+                labels.push(`${binStart.toFixed(1)}-${binEnd.toFixed(1)}`);
+                bins.push(0);
+            }
+            if (labels.length > 0 && binWidth > 0) { // Ensure binWidth is positive before this logic
+                const lastBinLabelParts = labels[labels.length - 1].split('-');
+                labels[labels.length - 1] = `${lastBinLabelParts[0]}-${Math.max(parseFloat(lastBinLabelParts[1]), maxScore).toFixed(1)}`;
+            }
+
+
+            scores.forEach(score => {
+                 if (binWidth <= 0) { // Handle case where all scores are the same
+                    if (bins.length > 0) bins[0]++;
+                    return;
+                }
+                let binIndex = Math.floor((score - minScore) / binWidth);
+                if (score === maxScore) binIndex = numBins - 1;
+                binIndex = Math.max(0, Math.min(binIndex, numBins - 1));
+                if (bins[binIndex] !== undefined) {
+                    bins[binIndex]++;
+                }
+            });
+
+            histogramChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Frequency of Total Scores',
+                        data: bins,
+                        backgroundColor: sitePrimaryColor,
+                        borderColor: sitePrimaryColorBorder,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Frequency (Number of Simulations)', font: {size: 14, weight: '500', family: "var(--primary-font, 'Lato')"}},
+                            ticks: { font: { family: "var(--primary-font, 'Lato')"}}
+                        },
+                        x: {
+                            title: { display: true, text: 'Total Weighted Score Bins', font: {size: 14, weight: '500', family: "var(--primary-font, 'Lato')"}},
+                            ticks: { autoSkip: true, maxRotation: 45, minRotation: 30, font: {size: 12, family: "var(--primary-font, 'Lato')"}}
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: {font: {size: 12, family: "var(--primary-font, 'Lato')"}} },
+                        tooltip: { backgroundColor: 'var(--dark-text, #333)', titleFont: {size: 14, family: "var(--primary-font, 'Lato')"}, bodyFont: {size: 12, family: "var(--primary-font, 'Lato')"}}
+                    }
+                }
+            });
+        }
+
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distanceKm = R * c;
+            const distanceMiles = distanceKm * 0.621371;
+            return { km: distanceKm, miles: distanceMiles };
+        }
+
+        document.getElementById('calculateDistanceButton').addEventListener('click', function() {
+            const selectedDamKey = selectDamElement.value;
+            const userLat = parseFloat(userLatitudeInput.value);
+            const userLon = parseFloat(userLongitudeInput.value);
+
+            if (!selectedDamKey || !predefinedDams[selectedDamKey]) {
+                distanceDisplayDiv.textContent = "Please select a dam first.";
+                distanceDisplayDiv.classList.remove('hidden');
+                return;
+            }
+            if (isNaN(userLat) || isNaN(userLon)) {
+                distanceDisplayDiv.textContent = "Please enter valid latitude and longitude for your location.";
+                distanceDisplayDiv.classList.remove('hidden');
+                return;
+            }
+
+            const damData = predefinedDams[selectedDamKey];
+            const damLat = damData.latitude;
+            const damLon = damData.longitude;
+
+            const distances = haversineDistance(userLat, userLon, damLat, damLon);
+            distanceDisplayDiv.innerHTML = `Approx. distance to ${damData.name}: <br><strong>${distances.km.toFixed(2)} km / ${distances.miles.toFixed(2)} miles</strong>`;
+            distanceDisplayDiv.classList.remove('hidden');
+        });
+
+
+        document.getElementById('calculateButton').addEventListener('click', calculateAndDisplayDeterministicScore);
+        document.getElementById('runMonteCarloButton').addEventListener('click', runMonteCarloSimulation);
+
+        document.getElementById('resetButton').addEventListener('click', function() {
+            selectDamElement.value = "";
+
+            questionsConfig.forEach(q => {
+                const slider = document.getElementById(q.id);
+                const numInput = document.getElementById(q.id + 'NumInput');
+                const weightInput = document.getElementById(q.id + 'WeightInput');
+                const confidenceSelect = document.getElementById(q.id + 'Confidence');
+                if (slider && numInput) { slider.value = questionValueDefault; numInput.value = questionValueDefault; }
+                if (weightInput) weightInput.value = q.defaultWeight.toFixed(1);
+                if (confidenceSelect) confidenceSelect.value = q.defaultConfidence;
+                if (q.spatialPromptID) {
+                    const spatialSelect = document.getElementById(q.spatialPromptID);
+                    if (spatialSelect) spatialSelect.value = q.spatialPromptDefault;
+                }
+            });
+            damNameInputElement.value = '';
+            damLatitudeInputElement.value = '';
+            damLongitudeInputElement.value = '';
+            estimatedCostInputElement.value = '';
+            document.getElementById('watershedName').value = '';
+            document.getElementById('damPurpose').value = 'Unknown';
+            document.getElementById('downstreamCommunityName').value = '';
+            document.getElementById('downstreamCommunityDistance').value = '';
+            document.getElementById('downstreamLandUse').value = 'Unknown';
+            userLatitudeInput.value = '';
+            userLongitudeInput.value = '';
+            distanceDisplayDiv.classList.add('hidden');
+            distanceDisplayDiv.textContent = '';
+
+
+            document.getElementById('monteCarloIterations').value = "1000";
+
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('deterministicScoreSection').classList.remove('hidden');
+            document.getElementById('chartContainer').classList.add('hidden');
+            document.getElementById('monteCarloResultsSection').classList.add('hidden');
+
+            if (scoreChart) { scoreChart.destroy(); scoreChart = null; }
+            if (histogramChart) { histogramChart.destroy(); histogramChart = null; }
+
+            const initialMaxPossibleScore = questionsConfig.reduce((sum, q) => sum + (q.defaultWeight * questionValueMax), 0);
+            document.getElementById('totalScoreDisplay').textContent = `0 / ${initialMaxPossibleScore.toFixed(1)}`;
+            document.getElementById('percentageScoreDisplay').textContent = `(0%)`;
+            document.getElementById('interpretationText').textContent = "";
+
+            const resultCard = document.getElementById('resultCard');
+            const borderClassesToRemove = ['border-professional-low', 'border-professional-moderate', 'border-professional-high', 'border-professional-critical'];
+            borderClassesToRemove.forEach(cls => resultCard.classList.remove(cls));
+            resultCard.classList.add('border-gray-300');
+
+            document.querySelector('.sdss-page header.text-center h1').scrollIntoView({ behavior: 'smooth'});
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            createQuestionInputs();
+            createWeightInputs();
+            const initialMaxPossibleScore = questionsConfig.reduce((sum, q) => sum + (q.defaultWeight * questionValueMax), 0);
+            document.getElementById('totalScoreDisplay').textContent = `0 / ${initialMaxPossibleScore.toFixed(1)}`;
+
+            const currentYearSpan = document.getElementById('currentYearDynamic');
+            if(currentYearSpan) {
+                currentYearSpan.textContent = new Date().getFullYear();
+            }
+
+            const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+            const mainNav = document.querySelector('.main-nav'); // Target .main-nav for class toggle
+            if (mobileNavToggle && mainNav) {
+                const isNavVisible = mainNav.classList.contains('active');
+                mobileNavToggle.setAttribute('aria-expanded', isNavVisible.toString());
+                mobileNavToggle.innerHTML = isNavVisible ? '✕' : '☰';
+
+
+                mobileNavToggle.addEventListener('click', () => {
+                    const isExpanded = mainNav.classList.toggle('active');
+                    mobileNavToggle.setAttribute('aria-expanded', isExpanded);
+                     if (isExpanded) {
+                        mobileNavToggle.innerHTML = '✕';
+                    } else {
+                        mobileNavToggle.innerHTML = '☰';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
